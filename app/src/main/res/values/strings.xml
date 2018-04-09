@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">SIM Navigation</string>
+    <string name="title_home">Home</string>
+    <string name="title_navigation">Navigation</string>
+    <string name="title_directory">Directory</string>
+
+    <string name="button_close">Close</string>
+
+    <string name="search_hint">Search for class location  e.g."A.4.04"</string>
+</resources>

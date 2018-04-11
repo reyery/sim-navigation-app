@@ -66,8 +66,7 @@ import java.io.InputStreamReader;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class NavMapFragment extends Fragment implements LocationListener,
-        GoogleMap.OnMapClickListener {
+public class NavMapFragment extends Fragment implements LocationListener {
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 42;
 
     private static final String TAG = "IndoorAtlasExample";
@@ -169,14 +168,15 @@ public class NavMapFragment extends Fragment implements LocationListener,
                 final String newId = region.getId();
                 // Are we entering a new floor plan or coming back the floor plan we just left?
                 if (mGroundOverlay == null || !region.equals(mOverlayFloorPlan)) {
-                    mCameraPositionNeedsUpdating = true; // entering new fp, need to move camera
+                    mCameraPositionNeedsUpdating = false; // entering new fp, need to move camera
                     if (mGroundOverlay != null) {
                         mGroundOverlay.remove();
                         mGroundOverlay = null;
                     }
                     mOverlayFloorPlan = region; // overlay will be this (unless error in loading)
                     fetchFloorPlan(newId);
-                } else {
+                }
+                else {
                     mGroundOverlay.setTransparency(0.0f);
                 }
 
@@ -290,7 +290,6 @@ public class NavMapFragment extends Fragment implements LocationListener,
         mIALocationManager.requestLocationUpdates(IALocationRequest.create(), mListener);
         mIALocationManager.registerRegionListener(mRegionListener);
 
-        mMap.setOnMapClickListener(this);
     }
 
     @Override
@@ -453,34 +452,8 @@ public class NavMapFragment extends Fragment implements LocationListener,
 
     }
 
-    @Override
-    public void onMapClick(LatLng point) {
-        if (mMap != null) {
-
-            mDestination = point;
-            if (mDestinationMarker == null) {
-                mDestinationMarker = mMap.addMarker(new MarkerOptions()
-                        .position(point)
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
-            } else {
-                mDestinationMarker.setPosition(point);
-            }
-            if (mWayfinder != null) {
-                if (mFloor != null)
-                mWayfinder.setDestination(point.latitude, point.longitude, mFloor);
-                else Toast.makeText(getActivity(), "mFloor is null.", Toast.LENGTH_LONG).show();
-            }
-            Log.d(TAG, "Set destination: (" + mDestination.latitude + ", " +
-                    mDestination.longitude + "), floor=" + mFloor);
-
-            updateRoute();
-        }
-    }
-
     public void receiveDest(LatLng point, int floor) {
         if (mMap != null) {
-
-            mDestination = point;
 
             if (mDestinationMarker == null) {
                 mDestinationMarker = mMap.addMarker(new MarkerOptions()
@@ -495,6 +468,7 @@ public class NavMapFragment extends Fragment implements LocationListener,
             Log.d(TAG, "Set destination: (" + mDestination.latitude + ", " +
                     mDestination.longitude + "), floor=" + floor);
 
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 18.5f));
             updateRoute();
         }
     }

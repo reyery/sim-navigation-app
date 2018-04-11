@@ -112,11 +112,9 @@ public class DirectoryFragment extends Fragment {
 
     public ArrayList<String> generateNames() {
         ArrayList<String> load = new ArrayList<>();
-        String json = MainActivity.getJson();
 
         try{
-            JSONObject jsonObject=new JSONObject(json);
-            JSONArray jsonArray=jsonObject.getJSONArray("venues");
+            JSONArray jsonArray=MainActivity.getJSON();
 
             for(int i=0;i<jsonArray.length();i++){
                 JSONObject jsonObject1=jsonArray.getJSONObject(i);

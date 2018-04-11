@@ -27,7 +27,7 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements DirectoryFragment.onItemClickListener{
 
     private static final String TAG = "MainFragment";
-    private static String json;
+    private static JSONArray json;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
         @Override
@@ -79,23 +79,7 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         setContentView(R.layout.activity_main);
 
         // Loads venue json into an ArrayList
-        ArrayList<String> load = new ArrayList<>();
-        json = null;
-
-        try {
-            Resources res = getResources();
-            int resourceIdentifier = res.getIdentifier("venue", "raw", this.getPackageName());
-            InputStream is = res.openRawResource(resourceIdentifier);
-
-            byte[] b = new byte[is.available()];
-            is.read(b);
-            is.close();
-
-            json = new String(b);
-
-        } catch (Exception e) {
-            Log.e(TAG, "Could not find venue.json from raw resources folder");
-        }
+        parseJSON();
 
         // Starts application at Home page
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
@@ -134,18 +118,16 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                 return super.onOptionsItemSelected(item); }
     }
 
-    public static String getJson() {
+    public static JSONArray getJSON() {
         return json;
     }
 
     public static double[] getLatLongF(String venue) {
         double[] latlongf = new double[3];
-        try{
-            JSONObject jsonObject=new JSONObject(json);
-            JSONArray jsonArray=jsonObject.getJSONArray("venues");
 
-            for(int i=0;i<jsonArray.length();i++){
-                JSONObject jsonObject1=jsonArray.getJSONObject(i);
+        try {
+            for(int i=0;i<json.length();i++){
+                JSONObject jsonObject1=json.getJSONObject(i);
                 String name =jsonObject1.getString("name");
                 if(name.equals(venue)) {
                     String lat =jsonObject1.getString("lat");
@@ -156,8 +138,11 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                     latlongf[2] =Double.parseDouble(floor);
                 }
             }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-        }catch (JSONException e){e.printStackTrace();}
+
 
         return latlongf;
     }
@@ -177,6 +162,40 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                     .commit();
         }
         mapFragment.receiveDest(dest,floor);
+    }
+
+    public String getResource(String filename) {
+        try {
+            Resources res = getResources();
+            int resourceIdentifier = res.getIdentifier(filename, "raw", this.getPackageName());
+            InputStream is = res.openRawResource(resourceIdentifier);
+
+            byte[] b = new byte[is.available()];
+            is.read(b);
+            is.close();
+
+            return new String(b);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Could not find "+filename+" from raw resources folder");
+        }
+
+        return null;
+    }
+
+    public void parseJSON() {
+        String input = getResource("venue");
+        try {
+            JSONObject jsonObject=new JSONObject(input);
+            json =jsonObject.getJSONArray("venues");
+
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void parseICS() {
+        String input = getResource("sample_timetable");
     }
 
 }

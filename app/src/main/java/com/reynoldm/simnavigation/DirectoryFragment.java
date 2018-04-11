@@ -2,16 +2,13 @@ package com.reynoldm.simnavigation;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -26,19 +23,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 
 public class DirectoryFragment extends Fragment {
     onItemClickListener mCallback;
 
-    private static final String TAG = "DirectoryFragment";
-
     private ArrayAdapter adapter;
 
     public interface onItemClickListener {
-        public void onDestSelected(LatLng dest, int floor);
+        void onDestSelected(LatLng dest, int floor);
     }
 
     @Override
@@ -102,7 +95,7 @@ public class DirectoryFragment extends Fragment {
                 double[] out = MainActivity.getLatLongF(value);
                 Double f = out[2];
                 int floor = f.intValue();
-                Toast.makeText(getContext(),"Lat: "+out[0]+" Long: "+out[1]+" Floor: "+floor,Toast.LENGTH_LONG).show();
+//                Toast.makeText(getContext(),"Lat: "+out[0]+" Long: "+out[1]+" Floor: "+floor,Toast.LENGTH_LONG).show();
                 LatLng dest = new LatLng(out[0],out[1]);
                 mCallback.onDestSelected(dest,floor);
             }

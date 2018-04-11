@@ -1,14 +1,10 @@
 package com.reynoldm.simnavigation;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -17,17 +13,25 @@ import android.view.MenuItem;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import net.fortuna.ical4j.data.CalendarBuilder;
+import net.fortuna.ical4j.model.Calendar;
+import net.fortuna.ical4j.model.Component;
+import net.fortuna.ical4j.model.PropertyList;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
 
-public class MainActivity extends AppCompatActivity implements DirectoryFragment.onItemClickListener{
+public class MainActivity extends AppCompatActivity implements DirectoryFragment.onItemClickListener, TimeTableFragment.onClassClickListener{
 
     private static final String TAG = "MainFragment";
     private static JSONArray json;
+    private static ArrayList<String[]> ics;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
         @Override
@@ -70,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
 
 
     public void onBackPressed() {
-        //TODO add read from backstack then back
+
     }
 
     @Override
@@ -81,14 +85,18 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         // Loads venue json into an ArrayList
         parseJSON();
 
+        // Loads ics
+        parseICS();
+
         // Starts application at Home page
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragframe, new TimeTableFragment(), "timetable")
+                .add(R.id.fragframe, new NavMapFragment(), "navmap")
                 .addToBackStack(null)
                 .commit();
+        navigation.setSelectedItemId(R.id.navigation_map);
     }
 
     @Override
@@ -122,6 +130,10 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         return json;
     }
 
+    public static ArrayList<String[]> getICS() {
+        return ics;
+    }
+
     public static double[] getLatLongF(String venue) {
         double[] latlongf = new double[3];
 
@@ -142,25 +154,16 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
             e.printStackTrace();
         }
 
-
-
         return latlongf;
     }
 
     public void onDestSelected(LatLng dest, int floor) {
+
+        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        navigation.setSelectedItemId(R.id.navigation_map);
+
         NavMapFragment mapFragment = (NavMapFragment) getSupportFragmentManager().findFragmentByTag("navmap");
-        if (mapFragment == null) {
-            mapFragment = new NavMapFragment();
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragframe, mapFragment, "navmap")
-                    .addToBackStack(null)
-                    .commit();
-        } else {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragframe, mapFragment)
-                    .addToBackStack(null)
-                    .commit();
-        }
         mapFragment.receiveDest(dest,floor);
     }
 
@@ -195,7 +198,49 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
     }
 
     public void parseICS() {
-        String input = getResource("sample_timetable");
+        ArrayList<String[]> tmp = new ArrayList<String[]>();
+        CalendarBuilder builder = new CalendarBuilder();
+        SimpleDateFormat dfdate0 = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat dfdate = new SimpleDateFormat("dd/MM");
+        SimpleDateFormat dftime = new SimpleDateFormat("hh:mm");
+
+        try {
+            Resources res = getResources();
+            int resourceIdentifier = res.getIdentifier("test", "raw", this.getPackageName());
+            InputStream is = res.openRawResource(resourceIdentifier);
+            Calendar calendar = builder.build(is);
+
+            for(Iterator i =calendar.getComponents().iterator(); i.hasNext();) {
+                Component component = (Component) i.next();
+
+                PropertyList properties = component.getProperties();
+                String[] property = properties.toString().split("\\n");
+
+                if (property.length>3) {
+                    String summary = property[2].split(":")[1];
+
+                    String dtstart = property[3].split(":")[1];
+                    String dtend = property[4].split(":")[1];
+                    java.util.Date datestart = dfdate0.parse(dtstart);
+                    java.util.Date dateend = dfdate0.parse(dtend);
+
+                    String date = dfdate.format(datestart);
+                    String start = dftime.format(datestart);
+                    String end = dftime.format(dateend);
+
+                    String[] location0 = property[11].split(":")[1].split("\\s");
+                    String location = location0[location0.length-1];
+
+                    tmp.add(new String[] {date,summary,start+" - "+end,location});
+                }
+            }
+
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        ics = tmp;
+
     }
 
 }

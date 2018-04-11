@@ -202,11 +202,11 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         CalendarBuilder builder = new CalendarBuilder();
         SimpleDateFormat dfdate0 = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
         SimpleDateFormat dfdate = new SimpleDateFormat("dd/MM");
-        SimpleDateFormat dftime = new SimpleDateFormat("hh:mm");
+        SimpleDateFormat dftime = new SimpleDateFormat("h:mm aa");
 
         try {
             Resources res = getResources();
-            int resourceIdentifier = res.getIdentifier("test", "raw", this.getPackageName());
+            int resourceIdentifier = res.getIdentifier("sample", "raw", this.getPackageName());
             InputStream is = res.openRawResource(resourceIdentifier);
             Calendar calendar = builder.build(is);
 

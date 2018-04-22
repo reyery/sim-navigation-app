@@ -17,6 +17,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -59,11 +60,12 @@ public class TimeTableFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Get today's date
-//        Date d = Calendar.getInstance().getTime();
-//        SimpleDateFormat df = new SimpleDateFormat("dd/MM");
-//        String today = df.format(d);
+        Date d = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat("dd/MM");
+        String today = df.format(d);
 
-        String today = "13/04";
+        // For testing purposes
+//        String today = "13/04";
 
         final ListView resultsListView = (ListView) getView().findViewById(R.id.timetablelist);
 
@@ -71,16 +73,43 @@ public class TimeTableFragment extends Fragment {
 
         final List<HashMap<String, String>> listItems = new ArrayList<>();
         SimpleAdapter adapter = new SimpleAdapter(getContext(), listItems, R.layout.list_subitem_layout,
-                new String[]{"Date","Summary", "Time","Location"},
-                new int[]{R.id.date, R.id.summary, R.id.duration, R.id.location});
+                new String[]{"Today","Date","Summary", "Time","Location"},
+                new int[]{R.id.bolddate, R.id.date, R.id.summary, R.id.duration, R.id.location});
 
         final ArrayList<Integer> todayClasses = new ArrayList<Integer>();
+        boolean notoday = true;
+        boolean last = false;
+        int todayindex = 0;
         for(int i=0;i<timetable.size();i++) {
             HashMap<String, String> item = new HashMap<String, String>();
             String date = timetable.get(i)[0];
 
             if(date.equals(today)) {
+                notoday = false;
                 todayClasses.add(i);
+                item.put("Today", "Today");
+            } else {
+                item.put("Today", "");
+            }
+
+            if(notoday) {
+                try {
+                    Date dtoday = df.parse(today);
+                    Date ddate = df.parse(date);
+
+                    if(ddate.after(dtoday)) {
+                        item.put("Today", "Today");
+                        item.put("Date", today);
+                        item.put("Summary", "Nothing Today");
+                        item.put("Time", "");
+                        item.put("Location", "");
+
+                        todayindex = i;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             item.put("Date", date);
@@ -88,6 +117,15 @@ public class TimeTableFragment extends Fragment {
             item.put("Time", timetable.get(i)[2]);
             item.put("Location", timetable.get(i)[3]);
             listItems.add(item);
+
+            if(i==timetable.size()-1&notoday) {
+                item.put("Today", "Today");
+                item.put("Date", today);
+                item.put("Summary", "No more entries");
+                item.put("Time", "");
+                item.put("Location", "");
+                last = true;
+            }
         }
 
         resultsListView.setAdapter(adapter);
@@ -95,6 +133,7 @@ public class TimeTableFragment extends Fragment {
         resultsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // Temporarily set clicklistener to only respond if the date is today
                 if(todayClasses.contains(position)) {
                     HashMap<String, String> hm = (HashMap) resultsListView.getItemAtPosition(position);
                     String value = hm.get("Location");
@@ -107,7 +146,19 @@ public class TimeTableFragment extends Fragment {
                 }
             }
         });
-        final int go = todayClasses.get(0);
+
+        int index = 0;
+        if(!notoday) {
+            index = todayClasses.get(0);
+        } else {
+            if(last) {
+                index = timetable.size();
+            } else {
+                index = todayindex;
+            }
+        }
+
+        final int go = index;
         resultsListView.setSelection(go);
 
         FloatingActionButton fab = getView().findViewById(R.id.fab);

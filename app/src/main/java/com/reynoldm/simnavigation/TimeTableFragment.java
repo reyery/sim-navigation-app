@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,7 +53,11 @@ public class TimeTableFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_timetable, container, false);
+        if(MainActivity.getICS()!=null) {
+            return inflater.inflate(R.layout.fragment_timetable, container, false);
+        } else {
+            return inflater.inflate(R.layout.fragment_timetable, container, false);
+        }
     }
 
     @Override
@@ -62,10 +67,10 @@ public class TimeTableFragment extends Fragment {
         // Get today's date
         Date d = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat("dd/MM");
-        String today = df.format(d);
+//        String today = df.format(d);
 
         // For testing purposes
-//        String today = "13/04";
+        String today = "1/04";
 
         final ListView resultsListView = (ListView) getView().findViewById(R.id.timetablelist);
 
@@ -78,11 +83,13 @@ public class TimeTableFragment extends Fragment {
 
         final ArrayList<Integer> todayClasses = new ArrayList<Integer>();
         boolean notoday = true;
+        boolean once = true;
         boolean last = false;
         int todayindex = 0;
         for(int i=0;i<timetable.size();i++) {
             HashMap<String, String> item = new HashMap<String, String>();
             String date = timetable.get(i)[0];
+            Log.d("Response: ", "> " + date +" "+timetable.get(i)[1]);
 
             if(date.equals(today)) {
                 notoday = false;
@@ -93,22 +100,28 @@ public class TimeTableFragment extends Fragment {
             }
 
             if(notoday) {
-                try {
-                    Date dtoday = df.parse(today);
-                    Date ddate = df.parse(date);
+                if(once) {
+                    try {
+                        Date dtoday = df.parse(today);
+                        Date ddate = df.parse(date);
 
-                    if(ddate.after(dtoday)) {
-                        item.put("Today", "Today");
-                        item.put("Date", today);
-                        item.put("Summary", "Nothing Today");
-                        item.put("Time", "");
-                        item.put("Location", "");
+                        if (ddate.after(dtoday)) {
+                            Log.d("Response: ", "> " + "tewsteteteteetet");
+                            HashMap<String, String> item1 = new HashMap<String, String>();
+                            item1.put("Today", "Today");
+                            item1.put("Date", today);
+                            item1.put("Summary", "Nothing Today");
+                            item1.put("Time", "");
+                            item1.put("Location", "");
+                            listItems.add(item1);
 
-                        todayindex = i;
+                            todayindex = i;
+                            once = false;
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
 
@@ -118,12 +131,14 @@ public class TimeTableFragment extends Fragment {
             item.put("Location", timetable.get(i)[3]);
             listItems.add(item);
 
-            if(i==timetable.size()-1&notoday) {
-                item.put("Today", "Today");
-                item.put("Date", today);
-                item.put("Summary", "No more entries");
-                item.put("Time", "");
-                item.put("Location", "");
+            if((i==(timetable.size()-1))&&once) {
+                HashMap<String, String> item1 = new HashMap<String, String>();
+                item1.put("Today", "Today");
+                item1.put("Date", today);
+                item1.put("Summary", "No more entries");
+                item1.put("Time", "");
+                item1.put("Location", "");
+                listItems.add(item1);
                 last = true;
             }
         }

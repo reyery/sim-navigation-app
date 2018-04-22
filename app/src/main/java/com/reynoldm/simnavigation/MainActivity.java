@@ -1,7 +1,10 @@
 package com.reynoldm.simnavigation;
 
+import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.renderscript.ScriptGroup;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
@@ -22,7 +25,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,7 +42,9 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
 
     private static final String TAG = "MainFragment";
     private static JSONArray json;
+    private static String icsinput;
     private static ArrayList<String[]> ics;
+    private static SharedPreferences pref;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
         @Override
@@ -67,6 +80,21 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                     }
                     return true;
 
+                case R.id.navigation_search:
+                    final Fragment directoryFragment = getSupportFragmentManager().findFragmentByTag("directory");
+                    if (directoryFragment == null) {
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragframe, new DirectoryFragment(), "directory")
+                                .addToBackStack(null)
+                                .commit();
+                    } else {
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.fragframe, directoryFragment)
+                                .addToBackStack(null)
+                                .commit();
+                    }
+                    return true;
+
             }
             return false;
         }
@@ -80,13 +108,15 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        pref = getApplicationContext().getSharedPreferences("Pref", 0);
+        String url = pref.getString("URL", null);
+        new DownloadICS().execute("https://studentcal.simge.edu.sg/SIMCalendar/5b2ce3d8dc570312e0530ac45c0b98e8.ics");
+
         setContentView(R.layout.activity_main);
 
         // Loads venue json into an ArrayList
         parseJSON();
-
-        // Loads ics
-        parseICS();
 
         // Starts application at Home page
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
@@ -101,23 +131,23 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater menuInflater = getMenuInflater(); menuInflater.inflate(R.menu.searchable, menu);
+        MenuInflater menuInflater = getMenuInflater(); menuInflater.inflate(R.menu.settings, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.search_icon:
-                final Fragment directoryFragment = getSupportFragmentManager().findFragmentByTag("directory");
-                if (directoryFragment == null) {
+            case R.id.settings_icon:
+                final Fragment settingsFragment = getSupportFragmentManager().findFragmentByTag("settings");
+                if (settingsFragment == null) {
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragframe, new DirectoryFragment(), "directory")
+                            .replace(R.id.fragframe, new SettingsFragment(), "settings")
                             .addToBackStack(null)
                             .commit();
                 } else {
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragframe, directoryFragment)
+                            .replace(R.id.fragframe, settingsFragment)
                             .addToBackStack(null)
                             .commit();
                 }
@@ -206,8 +236,12 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
 
         try {
             Resources res = getResources();
-            int resourceIdentifier = res.getIdentifier("sample", "raw", this.getPackageName());
-            InputStream is = res.openRawResource(resourceIdentifier);
+
+            // For testing with sample.ics
+//            int resourceIdentifier = res.getIdentifier("sample", "raw", this.getPackageName());
+//            InputStream is = res.openRawResource(resourceIdentifier);
+
+            InputStream is = new ByteArrayInputStream(icsinput.getBytes());
             Calendar calendar = builder.build(is);
 
             for(Iterator i =calendar.getComponents().iterator(); i.hasNext();) {
@@ -234,13 +268,46 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                     tmp.add(new String[] {date,summary,start+" - "+end,location});
                 }
             }
+            ics = tmp;
 
-        }catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            ics = null;
+        }
+    }
+
+    class DownloadICS extends AsyncTask<String, String, String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                URL url = new URL(params[0]);
+                URLConnection con = url.openConnection();
+                con.connect();
+
+                InputStream in = con.getInputStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+                StringBuffer buffer = new StringBuffer();
+                String line = "";
+
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line+"\n");
+                }
+
+                return buffer.toString();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
         }
 
-        ics = tmp;
-
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            icsinput = result;
+            parseICS();
+        }
     }
 
 }

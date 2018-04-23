@@ -7,7 +7,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,7 +28,7 @@ public class TimeTableFragment extends Fragment {
     onClassClickListener mCallback;
 
     public interface onClassClickListener {
-        public void onDestSelected(LatLng dest, int floor);
+        void onDestSelected(LatLng dest, int floor);
     }
 
     @Override
@@ -56,14 +55,20 @@ public class TimeTableFragment extends Fragment {
         if(MainActivity.getICS()!=null) {
             return inflater.inflate(R.layout.fragment_timetable, container, false);
         } else {
-            return inflater.inflate(R.layout.fragment_timetable, container, false);
+            return inflater.inflate(R.layout.empty_timetable, container, false);
         }
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        ArrayList<String[]> timetable = MainActivity.getICS();
+        if(timetable!=null) {
+            inflateTimetable(timetable);
+        }
+    }
 
+    public void inflateTimetable( ArrayList<String[]> timetable) {
         // Get today's date
         Date d = Calendar.getInstance().getTime();
         SimpleDateFormat df = new SimpleDateFormat("dd/MM");
@@ -72,24 +77,21 @@ public class TimeTableFragment extends Fragment {
         // For testing purposes
         String today = "1/04";
 
-        final ListView resultsListView = (ListView) getView().findViewById(R.id.timetablelist);
-
-        ArrayList<String[]> timetable = MainActivity.getICS();
+        final ListView resultsListView = getView().findViewById(R.id.timetablelist);
 
         final List<HashMap<String, String>> listItems = new ArrayList<>();
         SimpleAdapter adapter = new SimpleAdapter(getContext(), listItems, R.layout.list_subitem_layout,
                 new String[]{"Today","Date","Summary", "Time","Location"},
                 new int[]{R.id.bolddate, R.id.date, R.id.summary, R.id.duration, R.id.location});
 
-        final ArrayList<Integer> todayClasses = new ArrayList<Integer>();
+        final ArrayList<Integer> todayClasses = new ArrayList<>();
         boolean notoday = true;
         boolean once = true;
         boolean last = false;
         int todayindex = 0;
         for(int i=0;i<timetable.size();i++) {
-            HashMap<String, String> item = new HashMap<String, String>();
+            HashMap<String, String> item = new HashMap<>();
             String date = timetable.get(i)[0];
-            Log.d("Response: ", "> " + date +" "+timetable.get(i)[1]);
 
             if(date.equals(today)) {
                 notoday = false;
@@ -106,8 +108,7 @@ public class TimeTableFragment extends Fragment {
                         Date ddate = df.parse(date);
 
                         if (ddate.after(dtoday)) {
-                            Log.d("Response: ", "> " + "tewsteteteteetet");
-                            HashMap<String, String> item1 = new HashMap<String, String>();
+                            HashMap<String, String> item1 = new HashMap<>();
                             item1.put("Today", "Today");
                             item1.put("Date", today);
                             item1.put("Summary", "Nothing Today");
@@ -132,7 +133,7 @@ public class TimeTableFragment extends Fragment {
             listItems.add(item);
 
             if((i==(timetable.size()-1))&&once) {
-                HashMap<String, String> item1 = new HashMap<String, String>();
+                HashMap<String, String> item1 = new HashMap<>();
                 item1.put("Today", "Today");
                 item1.put("Date", today);
                 item1.put("Summary", "No more entries");
@@ -162,7 +163,7 @@ public class TimeTableFragment extends Fragment {
             }
         });
 
-        int index = 0;
+        int index;
         if(!notoday) {
             index = todayClasses.get(0);
         } else {

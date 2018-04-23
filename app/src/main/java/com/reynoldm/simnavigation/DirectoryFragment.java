@@ -63,8 +63,8 @@ public class DirectoryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        final ListView list = (ListView) getView().findViewById(R.id.directorylist);
-        EditText theFilter = (EditText) getView().findViewById(R.id.searchFilter);
+        final ListView list = getView().findViewById(R.id.directorylist);
+        EditText theFilter = getView().findViewById(R.id.searchFilter);
 
         ArrayList<String> names = generateNames();
 

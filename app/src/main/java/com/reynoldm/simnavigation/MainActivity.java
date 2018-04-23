@@ -4,7 +4,6 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.renderscript.ScriptGroup;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
@@ -25,18 +24,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements DirectoryFragment.onItemClickListener, TimeTableFragment.onClassClickListener{
 
@@ -108,18 +104,16 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
         pref = getApplicationContext().getSharedPreferences("Pref", 0);
-        String url = pref.getString("URL", null);
-        new DownloadICS().execute("https://studentcal.simge.edu.sg/SIMCalendar/5b2ce3d8dc570312e0530ac45c0b98e8.ics");
-
-        setContentView(R.layout.activity_main);
+        new DownloadICS().execute(pref.getString("URL", null));
 
         // Loads venue json into an ArrayList
         parseJSON();
 
         // Starts application at Home page
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         getSupportFragmentManager().beginTransaction()
@@ -164,6 +158,10 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         return ics;
     }
 
+    public static void downloadICS() {
+        new DownloadICS().execute(pref.getString("URL", null));
+    }
+
     public static double[] getLatLongF(String venue) {
         double[] latlongf = new double[3];
 
@@ -189,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
 
     public void onDestSelected(LatLng dest, int floor) {
 
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         navigation.setSelectedItemId(R.id.navigation_map);
 
@@ -227,59 +225,63 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         }
     }
 
-    public void parseICS() {
-        ArrayList<String[]> tmp = new ArrayList<String[]>();
+    public static void parseICS() {
+        ArrayList<String[]> tmp = new ArrayList<>();
         CalendarBuilder builder = new CalendarBuilder();
         SimpleDateFormat dfdate0 = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
         SimpleDateFormat dfdate = new SimpleDateFormat("dd/MM");
         SimpleDateFormat dftime = new SimpleDateFormat("h:mm aa");
 
         try {
-            Resources res = getResources();
-
             // For testing with sample.ics
+//            Resources res = getResources();
 //            int resourceIdentifier = res.getIdentifier("sample", "raw", this.getPackageName());
 //            InputStream is = res.openRawResource(resourceIdentifier);
 
             InputStream is = new ByteArrayInputStream(icsinput.getBytes());
             Calendar calendar = builder.build(is);
 
-            for(Iterator i =calendar.getComponents().iterator(); i.hasNext();) {
-                Component component = (Component) i.next();
+            for (Object o : calendar.getComponents()) {
+                Component component = (Component) o;
 
                 PropertyList properties = component.getProperties();
                 String[] property = properties.toString().split("\\n");
 
-                if (property.length>3) {
+                if (property.length > 3) {
                     String summary = property[2].split(":")[1];
 
                     String dtstart = property[3].split(":")[1];
                     String dtend = property[4].split(":")[1];
-                    java.util.Date datestart = dfdate0.parse(dtstart);
-                    java.util.Date dateend = dfdate0.parse(dtend);
+                    Date datestart = dfdate0.parse(dtstart);
+                    Date dateend = dfdate0.parse(dtend);
 
                     String date = dfdate.format(datestart);
                     String start = dftime.format(datestart);
                     String end = dftime.format(dateend);
 
                     String[] location0 = property[11].split(":")[1].split("\\s");
-                    String location = location0[location0.length-1];
+                    String location = location0[location0.length - 1];
 
-                    tmp.add(new String[] {date,summary,start+" - "+end,location});
+                    tmp.add(new String[]{date, summary, start + " - " + end, location});
                 }
             }
             ics = tmp;
 
         } catch (Exception e) {
+            e.printStackTrace();
             ics = null;
         }
     }
 
-    class DownloadICS extends AsyncTask<String, String, String> {
+    private static class DownloadICS extends AsyncTask<String, Void, String> {
 
         @Override
         protected String doInBackground(String... params) {
             try {
+                if(params[0]==null) {
+                    return null;
+                }
+
                 URL url = new URL(params[0]);
                 URLConnection con = url.openConnection();
                 con.connect();
@@ -288,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                 BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
                 StringBuffer buffer = new StringBuffer();
-                String line = "";
+                String line;
 
                 while ((line = reader.readLine()) != null) {
                     buffer.append(line+"\n");
@@ -304,10 +306,19 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
 
         @Override
         protected void onPostExecute(String result) {
-            super.onPostExecute(result);
             icsinput = result;
             parseICS();
         }
+    }
+
+    public static void storePref(String key, String value) {
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putString(key, value);
+        editor.apply();
+    }
+
+    public static String getPref(String key) {
+        return pref.getString(key, null);
     }
 
 }

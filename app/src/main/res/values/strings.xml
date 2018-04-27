@@ -12,6 +12,43 @@
     <string name="url_hint">Enter the URL for iCalendar file from portal</string>
 
     <string name="ical_url">iCalendar URL:</string>
-    <string name="empty">No timetable found</string>
+    <string name="empty">No timetable found\nAdd one in the settings</string>
     <string name="invalid_url">Invalid URL entered. Please try again.</string>
+    <string name="notification">Notification before event</string>
+
+    <string name="floor1">0bdd8303-92c9-4d4b-a3b1-372e44b5752f</string>
+    <string name="floor2">fef9c4dc-d04a-4deb-ac39-450920769d99</string>
+    <string name="floor3">beae5719-bff9-4168-8f37-d718e5a900b2</string>
+
+    <string-array name="duration">
+        <item>Disable</item>
+        <item>5 min</item>
+        <item>15 min</item>
+        <item>30 min</item>
+        <item>1 hour</item>
+    </string-array>
+
+    <string name="style_json">
+        [
+          {
+            "featureType": "poi.business",
+            "stylers": [
+              {
+                "visibility": "off"
+              }
+            ]
+          },
+          {
+            "featureType": "poi.park",
+            "elementType": "labels.text",
+            "stylers": [
+              {
+                "visibility": "off"
+              }
+            ]
+          }
+        ]
+    </string>
+
+
 </resources>

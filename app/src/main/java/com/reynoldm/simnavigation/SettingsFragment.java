@@ -9,8 +9,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,7 +25,7 @@ public class SettingsFragment extends Fragment {
     private Button button;
     private EditText text;
     private TextView warning;
-
+    private Spinner spinner;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -42,8 +45,46 @@ public class SettingsFragment extends Fragment {
         button = getView().findViewById(R.id.download);
         text = getView().findViewById(R.id.timetableurl);
         warning = getView().findViewById(R.id.invalid_url);
+        spinner = getView().findViewById(R.id.duration);
 
-        text.setText(MainActivity.getPref("URL"));
+        text.setText(MainActivity.getURLPref());
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(), R.array.duration, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(MainActivity.getSelectionPref());
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case 0:
+                        MainActivity.setDurationPref(0);
+                        break;
+                    case 1:
+                        // 5 min
+                        MainActivity.setDurationPref(300000);
+                        break;
+                    case 2:
+                        // 15 min
+                        MainActivity.setDurationPref(900000);
+                        break;
+                    case 3:
+                        // 30 min
+                        MainActivity.setDurationPref(1800000);
+                        break;
+                    case 4:
+                        // 1 hour
+                        MainActivity.setDurationPref(3600000);
+                        break;
+                }
+                MainActivity.setSelectionPref(position);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> arg0) {
+
+            }
+        });
 
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -82,13 +123,14 @@ public class SettingsFragment extends Fragment {
         @Override
         protected void onPostExecute(Boolean exist) {
             if(exist) {
-                MainActivity.storePref("URL", url);
-                MainActivity.downloadICS();
+                MainActivity.setURLPref(url);
+                new DownloadICS(getActivity()).execute(MainActivity.getURLPref());
                 Toast.makeText(getContext(), "iCalendar file downloaded", Toast.LENGTH_LONG).show();
             } else {
                 warning.setVisibility(View.VISIBLE);
             }
         }
     }
+
 
 }

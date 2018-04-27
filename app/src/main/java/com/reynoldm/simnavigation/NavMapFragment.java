@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -32,6 +33,7 @@ import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -58,7 +60,7 @@ import java.io.InputStream;
 
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
-public class NavMapFragment extends Fragment implements LocationListener {
+public class NavMapFragment extends Fragment implements LocationListener, OnMapReadyCallback {
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 42;
 
     private static final String TAG = "IndoorAtlasExample";
@@ -273,9 +275,9 @@ public class NavMapFragment extends Fragment implements LocationListener {
         super.onResume();
         if (mMap == null) {
             // Try to obtain the map from the SupportMapFragment.
-            mMap = ((SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map))
-                    .getMap();
-            mMap.setMyLocationEnabled(false);
+            SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+                    .findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
         }
 
         // start receiving location updates & monitor region changes
@@ -283,6 +285,19 @@ public class NavMapFragment extends Fragment implements LocationListener {
         mIALocationManager.registerRegionListener(mRegionListener);
 
     }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        boolean success = googleMap.setMapStyle(new MapStyleOptions(getResources()
+                .getString(R.string.style_json)));
+
+        if (!success) {
+            Log.e(TAG, "Style parsing failed.");
+        }
+
+        mMap = googleMap;
+    }
+
 
     @Override
     public void onPause() {
@@ -446,6 +461,29 @@ public class NavMapFragment extends Fragment implements LocationListener {
 
     public void receiveDest(LatLng point, int floor) {
         if (mMap != null) {
+
+            String floorplan = "";
+            switch (floor) {
+                case 1:
+                    floorplan = getString(R.string.floor1);
+                    break;
+                case 2:
+                    floorplan = getString(R.string.floor2);
+                    break;
+                case 3:
+                    floorplan = getString(R.string.floor3);
+                    break;
+            }
+
+            IARegion region = IARegion.floorPlan(floorplan);
+            if (mGroundOverlay == null || !region.equals(mOverlayFloorPlan)) {
+                if (mGroundOverlay != null) {
+                    mGroundOverlay.remove();
+                    mGroundOverlay = null;
+                }
+                mOverlayFloorPlan = region;
+                fetchFloorPlan(region.getId());
+            }
 
             mDestination = point;
 

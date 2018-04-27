@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -28,7 +29,7 @@ public class TimeTableFragment extends Fragment {
     onClassClickListener mCallback;
 
     public interface onClassClickListener {
-        void onDestSelected(LatLng dest, int floor);
+        void onDestSelected(String venue);
     }
 
     @Override
@@ -116,6 +117,8 @@ public class TimeTableFragment extends Fragment {
                             item1.put("Location", "");
                             listItems.add(item1);
 
+
+
                             todayindex = i;
                             once = false;
                         }
@@ -149,17 +152,9 @@ public class TimeTableFragment extends Fragment {
         resultsListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Temporarily set clicklistener to only respond if the date is today
-                if(todayClasses.contains(position)) {
-                    HashMap<String, String> hm = (HashMap) resultsListView.getItemAtPosition(position);
-                    String value = hm.get("Location");
-                    double[] out = MainActivity.getLatLongF(value);
-                    Double f = out[2];
-                    int floor = f.intValue();
-//                    Toast.makeText(getContext(), "Lat: " + out[0] + " Long: " + out[1] + " Floor: " + floor, Toast.LENGTH_LONG).show();
-                    LatLng dest = new LatLng(out[0], out[1]);
-                    mCallback.onDestSelected(dest, floor);
-                }
+                HashMap<String, String> hm = (HashMap) resultsListView.getItemAtPosition(position);
+                String value = hm.get("Location");
+                mCallback.onDestSelected(value);
             }
         });
 

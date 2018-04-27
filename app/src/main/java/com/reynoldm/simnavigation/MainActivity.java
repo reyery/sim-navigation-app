@@ -1,8 +1,8 @@
 package com.reynoldm.simnavigation;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -15,30 +15,19 @@ import android.view.MenuItem;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import net.fortuna.ical4j.data.CalendarBuilder;
-import net.fortuna.ical4j.model.Calendar;
-import net.fortuna.ical4j.model.Component;
-import net.fortuna.ical4j.model.PropertyList;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+
 
 public class MainActivity extends AppCompatActivity implements DirectoryFragment.onItemClickListener, TimeTableFragment.onClassClickListener{
 
     private static final String TAG = "MainFragment";
     private static JSONArray json;
-    private static String icsinput;
     private static ArrayList<String[]> ics;
     private static SharedPreferences pref;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -107,7 +96,8 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         setContentView(R.layout.activity_main);
 
         pref = getApplicationContext().getSharedPreferences("Pref", 0);
-        new DownloadICS().execute(pref.getString("URL", null));
+
+        new DownloadICS(this).execute(getURLPref());
 
         // Loads venue json into an ArrayList
         parseJSON();
@@ -121,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                 .addToBackStack(null)
                 .commit();
         navigation.setSelectedItemId(R.id.navigation_map);
+
     }
 
     @Override
@@ -150,42 +141,26 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
                 return super.onOptionsItemSelected(item); }
     }
 
-    public static JSONArray getJSON() {
-        return json;
-    }
-
-    public static ArrayList<String[]> getICS() {
-        return ics;
-    }
-
-    public static void downloadICS() {
-        new DownloadICS().execute(pref.getString("URL", null));
-    }
-
-    public static double[] getLatLongF(String venue) {
-        double[] latlongf = new double[3];
+    public void onDestSelected(String venue) {
+        LatLng dest = null;
+        int floor = 0;
 
         try {
             for(int i=0;i<json.length();i++){
                 JSONObject jsonObject1=json.getJSONObject(i);
                 String name =jsonObject1.getString("name");
                 if(name.equals(venue)) {
-                    String lat =jsonObject1.getString("lat");
-                    latlongf[0] =Double.parseDouble(lat);
-                    String lon =jsonObject1.getString("long");
-                    latlongf[1] =Double.parseDouble(lon);
-                    String floor =jsonObject1.getString("floor");
-                    latlongf[2] =Double.parseDouble(floor);
+                    double lat = Double.parseDouble(jsonObject1.getString("lat"));
+                    double lon = Double.parseDouble(jsonObject1.getString("long"));
+                    floor = Integer.parseInt(jsonObject1.getString("floor"));
+                    dest = new LatLng(lat, lon);
+
+                    break;
                 }
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
-        return latlongf;
-    }
-
-    public void onDestSelected(LatLng dest, int floor) {
 
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
@@ -195,130 +170,67 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         mapFragment.receiveDest(dest,floor);
     }
 
-    public String getResource(String filename) {
+    public void parseJSON() {
         try {
             Resources res = getResources();
-            int resourceIdentifier = res.getIdentifier(filename, "raw", this.getPackageName());
+            int resourceIdentifier = res.getIdentifier("venue", "raw", this.getPackageName());
             InputStream is = res.openRawResource(resourceIdentifier);
 
             byte[] b = new byte[is.available()];
             is.read(b);
             is.close();
+            String input = new String(b);
 
-            return new String(b);
-
-        } catch (Exception e) {
-            Log.e(TAG, "Could not find "+filename+" from raw resources folder");
-        }
-
-        return null;
-    }
-
-    public void parseJSON() {
-        String input = getResource("venue");
-        try {
             JSONObject jsonObject=new JSONObject(input);
             json =jsonObject.getJSONArray("venues");
 
-        }catch (JSONException e) {
+        } catch (IOException e) {
+            Log.e(TAG, "Could not find venue from raw resources folder");
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    public static void parseICS() {
-        ArrayList<String[]> tmp = new ArrayList<>();
-        CalendarBuilder builder = new CalendarBuilder();
-        SimpleDateFormat dfdate0 = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
-        SimpleDateFormat dfdate = new SimpleDateFormat("dd/MM");
-        SimpleDateFormat dftime = new SimpleDateFormat("h:mm aa");
-
-        try {
-            // For testing with sample.ics
-//            Resources res = getResources();
-//            int resourceIdentifier = res.getIdentifier("sample", "raw", this.getPackageName());
-//            InputStream is = res.openRawResource(resourceIdentifier);
-
-            InputStream is = new ByteArrayInputStream(icsinput.getBytes());
-            Calendar calendar = builder.build(is);
-
-            for (Object o : calendar.getComponents()) {
-                Component component = (Component) o;
-
-                PropertyList properties = component.getProperties();
-                String[] property = properties.toString().split("\\n");
-
-                if (property.length > 3) {
-                    String summary = property[2].split(":")[1];
-
-                    String dtstart = property[3].split(":")[1];
-                    String dtend = property[4].split(":")[1];
-                    Date datestart = dfdate0.parse(dtstart);
-                    Date dateend = dfdate0.parse(dtend);
-
-                    String date = dfdate.format(datestart);
-                    String start = dftime.format(datestart);
-                    String end = dftime.format(dateend);
-
-                    String[] location0 = property[11].split(":")[1].split("\\s");
-                    String location = location0[location0.length - 1];
-
-                    tmp.add(new String[]{date, summary, start + " - " + end, location});
-                }
-            }
-            ics = tmp;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            ics = null;
-        }
+    public static String getURLPref() {
+        return pref.getString("URL", null);
     }
 
-    private static class DownloadICS extends AsyncTask<String, Void, String> {
-
-        @Override
-        protected String doInBackground(String... params) {
-            try {
-                if(params[0]==null) {
-                    return null;
-                }
-
-                URL url = new URL(params[0]);
-                URLConnection con = url.openConnection();
-                con.connect();
-
-                InputStream in = con.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
-                StringBuffer buffer = new StringBuffer();
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line+"\n");
-                }
-
-                return buffer.toString();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            icsinput = result;
-            parseICS();
-        }
-    }
-
-    public static void storePref(String key, String value) {
+    public static void setURLPref(String value) {
         SharedPreferences.Editor editor = pref.edit();
-        editor.putString(key, value);
+        editor.putString("URL", value);
         editor.apply();
     }
 
-    public static String getPref(String key) {
-        return pref.getString(key, null);
+    public static long getDurationPref() {
+        return pref.getLong("Duration", 0);
+    }
+
+    public static void setDurationPref(long value) {
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putLong("Duration", value);
+        editor.apply();
+    }
+
+    public static int getSelectionPref() {
+        return pref.getInt("Selection", 0);
+    }
+
+    public static void setSelectionPref(int value) {
+        SharedPreferences.Editor editor = pref.edit();
+        editor.putInt("Selection", value);
+        editor.apply();
+    }
+
+    public static ArrayList<String[]> getICS() {
+        return ics;
+    }
+
+    public static void setICS(ArrayList<String[]> in) {
+        ics = in;
+    }
+
+    public static JSONArray getJSON() {
+        return json;
     }
 
 }

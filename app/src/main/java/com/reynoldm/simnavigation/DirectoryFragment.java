@@ -31,7 +31,7 @@ public class DirectoryFragment extends Fragment {
     private ArrayAdapter adapter;
 
     public interface onItemClickListener {
-        void onDestSelected(LatLng dest, int floor);
+        void onDestSelected(String venue);
     }
 
     @Override
@@ -92,12 +92,7 @@ public class DirectoryFragment extends Fragment {
 
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String value = (String) list.getItemAtPosition(position);
-                double[] out = MainActivity.getLatLongF(value);
-                Double f = out[2];
-                int floor = f.intValue();
-//                Toast.makeText(getContext(),"Lat: "+out[0]+" Long: "+out[1]+" Floor: "+floor,Toast.LENGTH_LONG).show();
-                LatLng dest = new LatLng(out[0],out[1]);
-                mCallback.onDestSelected(dest,floor);
+                mCallback.onDestSelected(value);
             }
         });
 

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
@@ -35,7 +36,7 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
-                case R.id.navigation_home:
+                case R.id.navigation_timetable:
                     final Fragment homeFragment = getSupportFragmentManager().findFragmentByTag("timetable");
                     if (homeFragment == null) {
                         getSupportFragmentManager().beginTransaction()
@@ -105,12 +106,29 @@ public class MainActivity extends AppCompatActivity implements DirectoryFragment
         // Starts application at Home page
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragframe, new NavMapFragment(), "navmap")
-                .addToBackStack(null)
-                .commit();
         navigation.setSelectedItemId(R.id.navigation_map);
+
+        Intent intent = getIntent();
+        if("com.reynoldm.simnavigation.NAVIGATE".equals(intent.getAction())) {
+
+
+            final String location = intent.getStringExtra("location");
+            Log.e(TAG, intent.getAction()+" location "+location);
+
+            // Needs to wait for fragment to load
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    onDestSelected(location);
+                }
+            }, 1000);
+        }
+
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
 
     }
 

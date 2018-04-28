@@ -63,7 +63,7 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 public class NavMapFragment extends Fragment implements LocationListener, OnMapReadyCallback {
     private static final int MY_PERMISSION_ACCESS_FINE_LOCATION = 42;
 
-    private static final String TAG = "IndoorAtlasExample";
+    private static final String TAG = "NavMapFragment";
 
     /* used to decide when bitmap should be downscaled */
     private static final int MAX_DIMENSION = 2048;
@@ -263,6 +263,7 @@ public class NavMapFragment extends Fragment implements LocationListener, OnMapR
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.e(TAG,"ONDESTROY CQLLLA");
         // remember to clean up after ourselves
         mIALocationManager.destroy();
         if (mWayfinder != null) {
@@ -476,14 +477,8 @@ public class NavMapFragment extends Fragment implements LocationListener, OnMapR
             }
 
             IARegion region = IARegion.floorPlan(floorplan);
-            if (mGroundOverlay == null || !region.equals(mOverlayFloorPlan)) {
-                if (mGroundOverlay != null) {
-                    mGroundOverlay.remove();
-                    mGroundOverlay = null;
-                }
-                mOverlayFloorPlan = region;
-                fetchFloorPlan(region.getId());
-            }
+            mOverlayFloorPlan = region;
+            fetchFloorPlan(region.getId());
 
             mDestination = point;
 
@@ -564,9 +559,9 @@ public class NavMapFragment extends Fragment implements LocationListener, OnMapR
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.e(TAG, "ViewCREATED");
         return inflater.inflate(R.layout.fragment_navmap, container, false);
     }
-
 
 }
 

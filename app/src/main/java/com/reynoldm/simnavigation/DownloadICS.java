@@ -117,7 +117,7 @@ public class DownloadICS extends AsyncTask<String, Void, String> {
                     tmp.add(new String[]{date, summary, start + " - " + end, location});
                 }
             }
-            noti.scheduleNotification(noti.getNotification("test", "now", "A.1.09"), System.currentTimeMillis(), 5000);
+            noti.scheduleNotification(noti.getNotification("Interaction Design", "8:30 AM - 10:30 AM", "A.1.14"), System.currentTimeMillis(), 5000);
             MainActivity.setICS(tmp);
 
         } catch (Exception e) {

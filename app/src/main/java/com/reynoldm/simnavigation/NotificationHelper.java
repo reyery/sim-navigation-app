@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.os.Build;
+import android.support.v4.app.NotificationCompat;
 
 class NotificationHelper extends ContextWrapper {
     private NotificationManager manager;
@@ -25,26 +26,26 @@ class NotificationHelper extends ContextWrapper {
     }
 
     public Notification getNotification(String title, String time, String location) {
-        Intent navigateIntent = new Intent(this, NotificationPublisher.class);
+        Intent navigateIntent = new Intent(this, MainActivity.class);
         navigateIntent.setAction("com.reynoldm.simnavigation.NAVIGATE");
         navigateIntent.putExtra("location", location);
-        PendingIntent navPendingInt = PendingIntent.getBroadcast(this, 0, navigateIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent navPendingInt = PendingIntent.getActivity(this, 0, navigateIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             return new Notification.Builder(getApplicationContext(), PRIMARY_CHANNEL)
                     .setContentTitle(title)
                     .setSmallIcon(R.drawable.ic_event_black_24dp)
-                    .setStyle(new Notification.BigTextStyle().bigText(time+'\n'+location))
+                    .setContentText(time+" @ "+location)
                     .setAutoCancel(true)
-                    .addAction(R.drawable.ic_navigation_black_24dp, "Navigate to location", navPendingInt)
+                    .setContentIntent(navPendingInt)
                     .build();
         } else {
             return new Notification.Builder(getApplicationContext())
                     .setContentTitle(title)
                     .setSmallIcon(R.drawable.ic_event_black_24dp)
-                    .setStyle(new Notification.BigTextStyle().bigText(time+'\n'+location))
+                    .setContentText(time+" @ "+location)
                     .setAutoCancel(true)
-                    .addAction(R.drawable.ic_navigation_black_24dp, "Navigate to location", navPendingInt)
+                    .setContentIntent(navPendingInt)
                     .build();
         }
     }
@@ -58,7 +59,6 @@ class NotificationHelper extends ContextWrapper {
 
     public void scheduleNotification(Notification notification, long time, long delay) {
         Intent notificationIntent = new Intent(this, NotificationPublisher.class);
-        notificationIntent.setAction("com.reynoldm.simnavigation.NOTIFICATION");
         notificationIntent.putExtra("notification-id", 1);
         notificationIntent.putExtra("notification", notification);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);

@@ -15,12 +15,6 @@ Bluetooth Beacons were also built and placed around the school which provided th
 
 ## Screenshots
 
-<img src="./Screenshots/Location_Search.png" width="30%" height="30%" title="Location Search">
+<img src="./Screenshots/Location_Search.png" width="30%" height="30%" hspace="5" title="Location Search"><img src="./Screenshots/Timetable.png" width="30%" height="30%" hspace="5" title="Timetable"><img src="./Screenshots/Navigation.png" width="30%" height="30%" hspace="5" title="Navigation">
 
-<img src="./Screenshots/Timetable.png" width="30%" height="30%" title="Timetable">
-
-<img src="./Screenshots/Navigation.png" width="30%" height="30%" title="Navigation">
-
-<img src="./Screenshots/Settings.png" width="30%" height="30%" title="Settings">
-
-<img src="./Screenshots/Notification.png" width="30%" height="30%" title="Notification">
+<img src="./Screenshots/Settings.png" width="30%" height="30%" hspace="5" title="Settings"><img src="./Screenshots/Notification.png" width="30%" hspace="5" height="30%" title="Notification">
